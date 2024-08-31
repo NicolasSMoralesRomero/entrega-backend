@@ -1,0 +1,24 @@
+[
+  {
+    "id": "1",
+    "title": "Notebook",
+    "description": "Notebook Acer",
+    "code": "1234",
+    "price": 1000,
+    "status": true,
+    "stock": 10,
+    "category": "Tecnologia",
+    "thumbnails": "link de imagen"
+  },
+  {
+    "id": "2",
+    "title": "Reloj",
+    "description": "Reloj analogico",
+    "code": "A001",
+    "price": 120,
+    "status": true,
+    "stock": 30,
+    "category": "Relojes",
+    "thumbnails": "link de imagen"
+  }
+]
