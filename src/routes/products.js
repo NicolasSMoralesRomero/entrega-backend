@@ -92,6 +92,7 @@ router.delete('/:pid', (req, res) => {
         console.error(err);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
+      console.log(`Se elimino el producto con id ${req.params.pid}`)
       res.status(204).end();
     });
   });
