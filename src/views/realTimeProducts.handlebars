@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productos en tiempo real</title>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-       
-        const socket = io();
+        document.addEventListener('DOMContentLoaded', () => {
 
-        socket.on('updateProducts', (products) => {
-            const productList = document.getElementById('productList');
+            const socket = io();
 
-            productList.innerHTML = products.map(product => 
-                `<li>${product.title} - ${product.price}</li>`
-            ).join('');
+            socket.on('updateProducts', (products) => {
+                const productList = document.getElementById('productList');
+
+                productList.innerHTML = products.map(product =>
+                    `<li>${product.title} - ${product.price}</li>`
+                ).join('');
+            });
+
+
+            document.getElementById('productForm').addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const title = event.target.title.value;
+                const price = event.target.price.value;
+
+                socket.emit('addProduct', { title, price });
+            });
         });
-
-        
-        document.getElementById('productForm').addEventListener('submit', (event) => {
-            event.preventDefault(); 
-
-            const title = event.target.title.value;
-            const price = event.target.price.value;
-            
-            socket.emit('addProduct', { title, price });
-        });
-    });
     </script>
 </head>
+
 <body>
     <header>
         <nav>
@@ -48,4 +50,5 @@
 <footer>
     <p>Footer</p>
 </footer>
+
 </html>

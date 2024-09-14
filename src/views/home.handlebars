@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
 </head>
+
 <body>
     <header>
         <h1>Listado de productos</h1>
@@ -18,14 +20,14 @@
         <h2>Productos en carrito</h2>
         <ul>
             {{#each cartProducts}}
-                <li>{{this.product}} - Cantidad: {{this.quantity}}</li>
+            <li>{{this.product}} - Cantidad: {{this.quantity}}</li>
             {{/each}}
         </ul>
 
         <h2>Todos los productos</h2>
         <ul>
             {{#each products}}
-                <li>{{this.title}} - {{this.price}}</li>
+            <li>{{this.title}} - {{this.price}}</li>
             {{/each}}
         </ul>
     </main>
@@ -34,4 +36,5 @@
         <p>Footer</p>
     </footer>
 </body>
+
 </html>

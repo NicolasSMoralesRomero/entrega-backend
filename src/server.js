@@ -55,10 +55,10 @@ app.get('/', async (req, res) => {
     try {
         const products = await getProducts();
         const cartProducts = await getCart('1');
-        res.render('home', { 
-            title: 'Home', 
-            products, 
-            cartProducts 
+        res.render('home', {
+            title: 'Home',
+            products,
+            cartProducts
         });
     } catch (err) {
         console.error(err);

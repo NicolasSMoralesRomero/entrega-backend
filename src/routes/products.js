@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const PRODUCTS_FILE = __dirname + '/../productos.json'; 
+const PRODUCTS_FILE = __dirname + '/../productos.json';
 
 router.get('/', (req, res) => {
   fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
