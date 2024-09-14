@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos en tiempo real</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+       
+        const socket = io();
+
+        socket.on('updateProducts', (products) => {
+            const productList = document.getElementById('productList');
+
+            productList.innerHTML = products.map(product => 
+                `<li>${product.title} - ${product.price}</li>`
+            ).join('');
+        });
+
+        
+        document.getElementById('productForm').addEventListener('submit', (event) => {
+            event.preventDefault(); 
+
+            const title = event.target.title.value;
+            const price = event.target.price.value;
+            
+            socket.emit('addProduct', { title, price });
+        });
+    });
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Inicio</a>
+            <a href="/realtimeproducts">Productos</a>
+        </nav>
+    </header>
+    <h1>Productos en Tiempo Real</h1>
+    <ul id="productList"></ul>
+    <form id="productForm">
+        <input type="text" name="title" placeholder="Title" required>
+        <input type="number" name="price" placeholder="Price" required>
+        <button type="submit">Agregar producto</button>
+    </form>
+</body>
+<footer>
+    <p>Footer</p>
+</footer>
+</html>

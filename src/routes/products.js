@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-
-const PRODUCTS_FILE = __dirname + '/../productos.json';
+const path = require('path');
+const PRODUCTS_FILE = __dirname + '/../productos.json'; 
 
 router.get('/', (req, res) => {
   fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
@@ -52,6 +52,7 @@ router.post('/', (req, res) => {
         console.error(err);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
+      io.emit('updateProducts', products);
       res.status(201).json(newProduct);
     });
   });
@@ -74,6 +75,7 @@ router.put('/:pid', (req, res) => {
         console.error(err);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
+      io.emit('updateProducts', products);
       res.json(products[index]);
     });
   });
@@ -93,10 +95,10 @@ router.delete('/:pid', (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
       }
       console.log(`Se elimino el producto con id ${req.params.pid}`)
+      io.emit('updateProducts', updatedProducts);
       res.status(204).end();
     });
   });
 });
 
 module.exports = router;
-
