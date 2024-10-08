@@ -1,40 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
+    <title>Inicio</title>
 </head>
-
 <body>
     <header>
-        <h1>Listado de productos</h1>
         <nav>
             <a href="/">Inicio</a>
             <a href="/realtimeproducts">Productos</a>
+            <a href="/cart">Carrito</a> <!-- Enlace al carrito -->
         </nav>
     </header>
+    <h1>Productos Disponibles</h1>
+    <ul>
+        {{#each products}}
+            <li>
+                {{this.title}} - ${{this.price}} 
+                <button onclick="addToCart('{{this._id}}')">Agregar al Carrito</button>
+            </li>
+        {{/each}}
+    </ul>
 
-    <main>
-        <h2>Productos en carrito</h2>
-        <ul>
-            {{#each cartProducts}}
-            <li>{{this.product}} - Cantidad: {{this.quantity}}</li>
-            {{/each}}
-        </ul>
-
-        <h2>Todos los productos</h2>
-        <ul>
-            {{#each products}}
-            <li>{{this.title}} - {{this.price}}</li>
-            {{/each}}
-        </ul>
-    </main>
-
-    <footer>
-        <p>Footer</p>
-    </footer>
+    <script>
+        function addToCart(productId) {
+            fetch(`/cart/add/${productId}`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    alert('Producto agregado al carrito');
+                } else {
+                    alert('Error al agregar producto al carrito');
+                }
+            });
+        }
+    </script>
 </body>
-
 </html>

@@ -1,104 +1,122 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const PRODUCTS_FILE = __dirname + '/../productos.json';
+const Product = require('../models/product.model.js');
 
-router.get('/', (req, res) => {
-  fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+// Función de validación
+const validateProduct = (product) => {
+    const { title, price, category } = product;
+    if (!title || !price || !category) {
+        return { isValid: false, error: 'Faltan parámetros requeridos' };
     }
-    const products = JSON.parse(data);
-    const limit = parseInt(req.query.limit, 10);
-    if (!isNaN(limit)) {
-      res.json(products.slice(0, limit));
-    } else {
-      res.json(products);
-    }
-  });
-});
+    return { isValid: true };
+};
 
-router.get('/:pid', (req, res) => {
-  fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-    const products = JSON.parse(data);
-    const product = products.find(p => p.id === req.params.pid);
-    if (product) {
-      res.json(product);
-    } else {
-      res.status(404).json({ error: 'Producto no encontrado' });
-    }
-  });
-});
+router.get('/', async (req, res) => {
+    try {
+        const { limit = 10, page = 1, sort, query } = req.query;
+        const parsedLimit = parseInt(limit);
+        const parsedPage = parseInt(page);
+        const filter = {};
+        
+        if (query) {
+            filter.title = { $regex: query, $options: 'i' };
+        }
 
-router.post('/', (req, res) => {
-  const { title, description, code, price, status = true, stock, category, thumbnails } = req.body;
-  fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-    const products = JSON.parse(data);
-    const newId = (products.length ? Math.max(...products.map(p => Number(p.id))) + 1 : 1).toString();
-    const newProduct = { id: newId, title, description, code, price, status, stock, category, thumbnails };
-    products.push(newProduct);
-    fs.writeFile(PRODUCTS_FILE, JSON.stringify(products, null, 2), err => {
-      if (err) {
+        const sortOptions = {};
+        if (sort === 'asc') sortOptions.price = 1;
+        else if (sort === 'desc') sortOptions.price = -1;
+
+        const products = await Product.find(filter)
+            .sort(sortOptions)
+            .limit(parsedLimit)
+            .skip((parsedPage - 1) * parsedLimit);
+
+        const total = await Product.countDocuments(filter);
+        const totalPages = Math.ceil(total / parsedLimit);
+
+        res.json({
+            status: 'success',
+            payload: products,
+            totalPages,
+            prevPage: parsedPage > 1 ? parsedPage - 1 : null,
+            nextPage: parsedPage < totalPages ? parsedPage + 1 : null,
+            page: parsedPage,
+            hasPrevPage: parsedPage > 1,
+            hasNextPage: parsedPage < totalPages,
+            prevLink: parsedPage > 1 ? `/api/products?page=${parsedPage - 1}&limit=${parsedLimit}` : null,
+            nextLink: parsedPage < totalPages ? `/api/products?page=${parsedPage + 1}&limit=${parsedLimit}` : null,
+        });
+    } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
-      io.emit('updateProducts', products);
-      res.status(201).json(newProduct);
-    });
-  });
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
-router.put('/:pid', (req, res) => {
-  fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-    const products = JSON.parse(data);
-    const index = products.findIndex(p => p.id === req.params.pid);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
-    }
-    products[index] = { ...products[index], ...req.body };
-    fs.writeFile(PRODUCTS_FILE, JSON.stringify(products, null, 2), err => {
-      if (err) {
+// Obtener un producto por ID
+router.get('/:pid', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.pid);
+        if (product) {
+            res.json(product);
+        } else {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        }
+    } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
-      io.emit('updateProducts', products);
-      res.json(products[index]);
-    });
-  });
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
-router.delete('/:pid', (req, res) => {
-  fs.readFile(PRODUCTS_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+// Crear un nuevo producto
+router.post('/', async (req, res) => {
+    const { isValid, error } = validateProduct(req.body);
+    if (!isValid) {
+        return res.status(400).json({ error });
     }
-    const products = JSON.parse(data);
-    const updatedProducts = products.filter(p => p.id !== req.params.pid);
-    fs.writeFile(PRODUCTS_FILE, JSON.stringify(updatedProducts, null, 2), err => {
-      if (err) {
+
+    try {
+        const newProduct = new Product(req.body);
+        const savedProduct = await newProduct.save();
+        res.status(201).json(savedProduct);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al guardar el producto' });
+    }
+});
+
+// Actualizar un producto por ID
+router.put('/:pid', async (req, res) => {
+    const { isValid, error } = validateProduct(req.body);
+    if (!isValid) {
+        return res.status(400).json({ error });
+    }
+
+    try {
+        const updatedProduct = await Product.findByIdAndUpdate(req.params.pid, req.body, { new: true });
+        if (updatedProduct) {
+            res.json(updatedProduct);
+        } else {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        }
+    } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
-      console.log(`Se elimino el producto con id ${req.params.pid}`)
-      io.emit('updateProducts', updatedProducts);
-      res.status(204).end();
-    });
-  });
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Eliminar un producto por ID
+router.delete('/:pid', async (req, res) => {
+    try {
+        const deletedProduct = await Product.findByIdAndDelete(req.params.pid);
+        if (deletedProduct) {
+            res.status(204).end();
+        } else {
+            res.status(404).json({ error: 'Producto no encontrado' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 module.exports = router;
