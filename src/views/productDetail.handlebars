@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        function addToCart(productId) {
+            fetch(`/api/carts/670457eadbee7b2e09aacd6f/product/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ quantity: 1 })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Error al agregar el producto al carrito');
+                    }
+                })
+                .then(data => {
+                    alert('Producto agregado al carrito');
+                    console.log('Carrito actualizado:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message);
+                });
+        }
+    </script>
+</head>
+
+<body>
+    <h1>{{product.title}}</h1>
+    <p>Descripción: {{product.description}}</p>
+    <p>Precio: ${{product.price}}</p>
+    <p>Stock: {{product.stock}}</p>
+    <p>Categoría: {{product.category}}</p>
+
+    <button onclick="addToCart('{{product._id}}')">Agregar al carrito</button>
+    <button onclick="window.history.back()">Volver a la lista de productos</button>
+</body>
+
+</html>

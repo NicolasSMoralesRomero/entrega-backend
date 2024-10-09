@@ -316,9 +316,17 @@ app.get('/products/:pid', async (req, res) => {
     try {
         const product = await Product.findById(req.params.pid);
         if (product) {
+            const productData = {
+                _id: product._id,
+                title: product.title,
+                description: product.description,
+                price: product.price,
+                stock: product.stock,
+                category: product.category
+            };
             res.render('productDetail', {
                 title: product.title,
-                product
+                product: productData 
             });
         } else {
             res.status(404).send('Producto no encontrado');
@@ -337,15 +345,24 @@ app.get('/realtimeproducts', (req, res) => {
 io.on('connection', (socket) => {
     console.log('New WebSocket connection');
 
-    socket.on('getProducts', async ({ page, limit, category }) => {
-        const { products, hasPrevPage, hasNextPage } = await getProducts(limit, page, category);
-
-        socket.emit('updateProducts', {
-            products,
-            hasPrevPage,
-            hasNextPage
-        });
+    socket.on('getProducts', async ({ page, limit, category, sortBy, sortOrder }) => {
+        let query = {};
+        if (category) {
+            query.category = category;
+        }
+    
+        const products = await Product.find(query)
+            .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }) // Ordenar según sortBy y sortOrder
+            .skip((page - 1) * limit)
+            .limit(limit);
+    
+        const totalProducts = await Product.countDocuments(query);
+        const hasPrevPage = page > 1;
+        const hasNextPage = totalProducts > page * limit;
+    
+        socket.emit('updateProducts', { products, hasPrevPage, hasNextPage });
     });
+    
 
     socket.on('filterProducts', async ({ category, page, limit }) => {
         const { products, hasPrevPage, hasNextPage } = await getProducts(limit, page, category);

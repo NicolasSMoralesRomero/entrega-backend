@@ -6,35 +6,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productos en Tiempo Real</title>
     <script src="/socket.io/socket.io.js"></script>
+
+    <!-- No pude colocar el codigo js en un arhivo aparte, para verificar estructura handlebars ir a linea 152 -->
+
     <script>
         let currentPage = 1;
         const limit = 10;
         let selectedCategory = '';
+        let sortBy = 'title';
+        let sortOrder = 'asc';
+
+        // Función para leer los parámetros de la URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentPage = parseInt(urlParams.get('page')) || 1;
+            selectedCategory = urlParams.get('category') || '';
+            sortBy = urlParams.get('sortBy') || 'title';
+            sortOrder = urlParams.get('sortOrder') || 'asc';
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const socket = io();
             const categorySelect = document.getElementById('categorySelect');
             const prevButton = document.getElementById('prevButton');
             const nextButton = document.getElementById('nextButton');
+            const sortSelect = document.getElementById('sortSelect');
+            const orderSelect = document.getElementById('orderSelect');
 
+            // Leer los parámetros de la URL
+            getUrlParams();
+
+            // Establecer los valores de los selects basados en los parámetros
+            categorySelect.value = selectedCategory;
+            sortSelect.value = sortBy;
+            orderSelect.value = sortOrder;
+
+            // Cargar productos
             loadProducts();
 
             function loadProducts() {
-                socket.emit('getProducts', { page: currentPage, limit, category: selectedCategory });
+                socket.emit('getProducts', { page: currentPage, limit, category: selectedCategory, sortBy, sortOrder });
             }
 
             socket.on('updateProducts', ({ products, hasPrevPage, hasNextPage }) => {
                 const productList = document.getElementById('productList');
                 productList.innerHTML = products.map(product =>
-                    `<li>${product.title || 'Sin nombre'} - ${product.price} <button onclick="addToCart('${product._id}')">Agregar al carrito</button></li>`
+                    `<li>
+                    ${product.title || 'Sin nombre'} - ${product.price} 
+                    <button onclick="addToCart('${product._id}')">Agregar al carrito</button>
+                    <button onclick="showDetails('${product._id}')">Mostrar más</button>
+                </li>`
                 ).join('');
 
                 prevButton.disabled = !hasPrevPage;
                 nextButton.disabled = !hasNextPage;
+
+                updateURL();
             });
+
+            function updateURL() {
+                const url = new URL(window.location);
+                url.searchParams.set('page', currentPage);
+                url.searchParams.set('category', selectedCategory);
+                url.searchParams.set('sortBy', sortBy);
+                url.searchParams.set('sortOrder', sortOrder);
+                window.history.pushState({}, '', url);
+            }
 
             categorySelect.addEventListener('change', () => {
                 selectedCategory = categorySelect.value;
+                currentPage = 1;
+                loadProducts();
+            });
+
+            sortSelect.addEventListener('change', () => {
+                sortBy = sortSelect.value;
+                currentPage = 1;
+                loadProducts();
+            });
+
+            orderSelect.addEventListener('change', () => {
+                sortOrder = orderSelect.value;
                 currentPage = 1;
                 loadProducts();
             });
@@ -89,7 +141,12 @@
                     alert(error.message);
                 });
         }
+
+        function showDetails(productId) {
+            window.location.href = `/products/${productId}`;
+        }
     </script>
+
 </head>
 
 <body>
@@ -112,6 +169,18 @@
         <option value="Relojes">Relojes</option>
         <option value="Ropa">Ropa</option>
         <option value="Hogar">Hogar</option>
+    </select>
+
+    <label for="sortSelect">Ordenar por:</label>
+    <select id="sortSelect">
+        <option value="title">Nombre</option>
+        <option value="price">Precio</option>
+    </select>
+
+    <label for="orderSelect">Orden:</label>
+    <select id="orderSelect">
+        <option value="asc">Ascendente: A - Z // Precio menor</option>
+        <option value="desc">Descendente: Z - A // Precio mayor</option>
     </select>
 
     <ul id="productList"></ul>
