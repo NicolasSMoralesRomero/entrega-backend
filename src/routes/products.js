@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
         const parsedLimit = parseInt(limit);
         const parsedPage = parseInt(page);
         const filter = {};
-        
+
         if (query) {
             filter.title = { $regex: query, $options: 'i' };
         }

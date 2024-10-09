@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 // Conexión con la base de datos
-mongoose.connect("mongodb+srv://nicomorales:C0hsHN0Of0oXC5aq@cluster0.rqnge.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect("Colocar URL pasada con la entrega")
     .then(() => { console.log("Conectado a la base de datos") })
     .catch(error => console.error("Error en la conexión a la base de datos", error));
 
@@ -326,7 +326,7 @@ app.get('/products/:pid', async (req, res) => {
             };
             res.render('productDetail', {
                 title: product.title,
-                product: productData 
+                product: productData
             });
         } else {
             res.status(404).send('Producto no encontrado');
@@ -350,19 +350,19 @@ io.on('connection', (socket) => {
         if (category) {
             query.category = category;
         }
-    
+
         const products = await Product.find(query)
             .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 }) // Ordenar según sortBy y sortOrder
             .skip((page - 1) * limit)
             .limit(limit);
-    
+
         const totalProducts = await Product.countDocuments(query);
         const hasPrevPage = page > 1;
         const hasNextPage = totalProducts > page * limit;
-    
+
         socket.emit('updateProducts', { products, hasPrevPage, hasNextPage });
     });
-    
+
 
     socket.on('filterProducts', async ({ category, page, limit }) => {
         const { products, hasPrevPage, hasNextPage } = await getProducts(limit, page, category);
