@@ -25,7 +25,6 @@ router.get('/:cid', async (req, res) => {
     }
 
     try {
-        // Usa 'products.productId' en lugar de 'products.productId'
         const cart = await Cart.findById(cid).populate('products.productId');
         if (cart) {
             res.json(cart.products);
@@ -83,6 +82,4 @@ router.post('/:cid/product/:pid', async (req, res) => {
     }
 });
 
-
-
-module.exports = router;
+module.exports = router

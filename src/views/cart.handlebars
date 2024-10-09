@@ -5,40 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carrito</title>
-    <style>
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .cart-item button {
-            margin-left: 10px;
-        }
-    </style>
 </head>
 
 <body>
-    <header>
-        <nav>
-            <a href="/">Inicio</a>
-            <a href="/realtimeproducts">Productos</a>
-        </nav>
-    </header>
     <h1>Productos en el Carrito</h1>
     <div id="cartItems">
         {{#each cart}}
         <div class="cart-item">
-            <span>{{this.product.title}} - Cantidad: {{this.quantity}}</span>
+            <span>{{this.title}} - Cantidad: {{this.quantity}}</span>
             <div>
-                <button onclick="updateQuantity('{{this.product._id}}', 1)">+</button>
-                <button onclick="updateQuantity('{{this.product._id}}', -1)">-</button>
-                <button onclick="removeFromCart('{{this.product._id}}')">Eliminar</button>
+                <button onclick="updateQuantity('{{this.productId}}', 1)">+</button>
+                <button onclick="updateQuantity('{{this.productId}}', -1)">-</button>
+                <button onclick="removeFromCart('{{this.productId}}')">Eliminar</button>
             </div>
         </div>
         {{/each}}
     </div>
-    <a href="/">Volver a la tienda</a>
+    <div class="total">
+        Total: {{total}}
+    </div>
+    <button onclick="clearCart()">Vaciar Carrito</button>
+    <a href="/realtimeproducts">Volver a la tienda</a>
 
     <script>
         function updateQuantity(productId, change) {
@@ -49,34 +36,44 @@
                 },
                 body: JSON.stringify({ quantity: change })
             })
-            .then(response => {
-                if (response.ok) {
-                    alert('Cantidad actualizada');
-                    location.reload();
-                } else {
-                    alert('Error al actualizar la cantidad');
-                }
-            });
+                .then(response => {
+                    if (response.ok) {
+                        alert('Cantidad actualizada');
+                        location.reload();
+                    } else {
+                        alert('Error al actualizar la cantidad');
+                    }
+                });
         }
 
         function removeFromCart(productId) {
             fetch(`/api/carts/670457eadbee7b2e09aacd6f/products/${productId}`, {
                 method: 'DELETE'
             })
-            .then(response => {
-                if (response.ok) {
-                    alert('Producto eliminado del carrito');
-                    location.reload();
-                } else {
-                    alert('Error al eliminar el producto del carrito');
-                }
-            });
+                .then(response => {
+                    if (response.ok) {
+                        alert('Producto eliminado del carrito');
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar el producto del carrito');
+                    }
+                });
+        }
+
+        function clearCart() {
+            fetch(`/api/carts/670457eadbee7b2e09aacd6f/products`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Carrito vacío');
+                        location.reload();
+                    } else {
+                        alert('Error al vaciar el carrito');
+                    }
+                });
         }
     </script>
 </body>
-
-<footer>
-    <p>Footer</p>
-</footer>
 
 </html>

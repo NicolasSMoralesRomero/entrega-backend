@@ -135,16 +135,103 @@ app.post('/api/carts', async (req, res) => {
 app.get('/api/carts/:cid', async (req, res) => {
     try {
         const cart = await Cart.findById(req.params.cid).populate('products.productId');
-        if (cart) {
-            res.json(cart.products);
-        } else {
-            res.status(404).json({ error: 'Carrito no encontrado' });
+
+        if (!cart) {
+            return res.status(404).send('Carrito no encontrado');
         }
+
+        const cartProducts = cart.products.map(item => ({
+            productId: item.productId._id,
+            title: item.productId.title,
+            quantity: item.quantity,
+            price: item.productId.price
+        }));
+
+        // Calcular el total
+        const total = cartProducts.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+        res.render('cart', {
+            cart: cartProducts,
+            total: total
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.put('/api/carts/:cid/products/:pid', async (req, res) => {
+    const { quantity } = req.body;
+
+    try {
+        const cart = await Cart.findById(req.params.cid);
+        if (!cart) {
+            return res.status(404).json({ error: 'Carrito no encontrado' });
+        }
+
+        const productIndex = cart.products.findIndex(p => p.productId.toString() === req.params.pid);
+
+        if (productIndex === -1) {
+            return res.status(404).json({ error: 'Producto no encontrado en el carrito' });
+        }
+
+        cart.products[productIndex].quantity += quantity;
+
+        // Si la cantidad llega a 0 se elimina el producto.
+        if (cart.products[productIndex].quantity <= 0) {
+            cart.products.splice(productIndex, 1);
+        }
+
+        await cart.save();
+        res.status(200).json(cart.products); // Devolver productos del carrito actualizado
+
+    } catch (err) {
+        console.error('Error al actualizar cantidad de producto:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.delete('/api/carts/:cid/products/:pid', async (req, res) => {
+    try {
+        const cart = await Cart.findById(req.params.cid);
+        if (!cart) {
+            return res.status(404).json({ error: 'Carrito no encontrado' });
+        }
+
+        const productIndex = cart.products.findIndex(p => p.productId.toString() === req.params.pid);
+
+        if (productIndex === -1) {
+            return res.status(404).json({ error: 'Producto no encontrado en el carrito' });
+        }
+
+        cart.products.splice(productIndex, 1); // Eliminar producto del carrito
+        await cart.save();
+        res.status(200).json(cart.products); // Devolver productos del carrito actualizado
+    } catch (err) {
+        console.error('Error al eliminar producto del carrito:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+//Eliminar el carrito completo
+app.delete('/api/carts/:cid/products', async (req, res) => {
+    try {
+        const cart = await Cart.findById(req.params.cid);
+        if (!cart) {
+            return res.status(404).json({ error: 'Carrito no encontrado' });
+        }
+
+        // Vaciar el carrito
+        cart.products = [];
+        await cart.save();
+
+        res.status(200).json({ message: 'Carrito vacío', cart });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 app.post('/api/carts/:cid/product/:pid', async (req, res) => {
     const { quantity } = req.body;
@@ -200,12 +287,12 @@ app.get('/', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     const { limit = 10, page = 1 } = req.query;
-    
+
     try {
         const products = await Product.find()
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
-        
+
         const totalProducts = await Product.countDocuments();
         const hasPrevPage = page > 1;
         const hasNextPage = (page * limit) < totalProducts;
@@ -252,7 +339,7 @@ io.on('connection', (socket) => {
 
     socket.on('getProducts', async ({ page, limit, category }) => {
         const { products, hasPrevPage, hasNextPage } = await getProducts(limit, page, category);
-        
+
         socket.emit('updateProducts', {
             products,
             hasPrevPage,
@@ -262,7 +349,7 @@ io.on('connection', (socket) => {
 
     socket.on('filterProducts', async ({ category, page, limit }) => {
         const { products, hasPrevPage, hasNextPage } = await getProducts(limit, page, category);
-        
+
         socket.emit('updateProducts', {
             products,
             hasPrevPage,

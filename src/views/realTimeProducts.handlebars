@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +35,7 @@
 
             categorySelect.addEventListener('change', () => {
                 selectedCategory = categorySelect.value;
-                currentPage = 1; // Reset page to 1 on category change
+                currentPage = 1;
                 loadProducts();
             });
 
@@ -72,27 +73,28 @@
                 },
                 body: JSON.stringify({ quantity: 1 })
             })
-            .then(response => {
-                if (response.ok) {
-                    return response.json(); // Procesar la respuesta
-                } else {
-                    throw new Error('Error al agregar el producto al carrito');
-                }
-            })
-            .then(data => {
-                alert('Producto agregado al carrito');
-                console.log('Carrito actualizado:', data); // Mostrar el contenido actualizado del carrito
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(error.message);
-            });
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Error al agregar el producto al carrito');
+                    }
+                })
+                .then(data => {
+                    alert('Producto agregado al carrito');
+                    console.log('Carrito actualizado:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message);
+                });
         }
     </script>
 </head>
+
 <body>
     <h1>Productos en Tiempo Real</h1>
-    
+
     <h2>¡Crea tus productos!</h2>
     <form id="productForm">
         <input type="text" name="title" placeholder="Título" required>
@@ -117,8 +119,5 @@
     <button id="prevButton" disabled>Página Anterior</button>
     <button id="nextButton" disabled>Página Siguiente</button>
 </body>
+
 </html>
-
-
-
-
